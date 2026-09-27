@@ -29,4 +29,5 @@ describe('Smoke Test - Verificar que el sistema de testing funciona', () => {
   it('debe pasar cuando la logica es correcta', () => {
     expect(true).toBe(true);
   });
+  
 });
