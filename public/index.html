@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+	<link rel="manifest" href="/manifest.json">
+	<meta name="theme-color" content="#3b82f6">
+	<meta name="description" content="Gestor de bases de datos y archivos local, offline-first, sin servidor.">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocalAdmin Omega</title>
@@ -58,5 +61,15 @@
     </dialog>
 
     <script type="module" src="/src/js/ui/main.js"></script>
+	<script>
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then((reg) => console.log('SW registrado:', reg.scope))
+                .catch((err) => console.warn('SW no registrado:', err));
+        });
+    }
+</script>
 </body>
 </html>

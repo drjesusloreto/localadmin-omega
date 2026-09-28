@@ -125,74 +125,82 @@ export class WorkflowEngine {
      * @returns {Promise<Object>} - Reporte de ejecución.
      */
     async execute(workflowName, initialContext = {}) {
-        const workflow = this.workflows.get(workflowName);
-        if (!workflow) {
-            throw new Error(`Workflow no encontrado: ${workflowName}`);
-        }
-        if (!workflow.enabled) {
-            return {
-                workflow: workflowName,
-                success: false,
-                skipped: true,
-                reason: 'Workflow deshabilitado',
-                steps: []
-            };
-        }
+		const workflow = this.workflows.get(workflowName);
+		if (!workflow) {
+			throw new Error(`Workflow no encontrado: ${workflowName}`);
+		}
+		if (!workflow.enabled) {
+			return {
+				workflow: workflowName,
+				success: false,
+				skipped: true,
+				reason: 'Workflow deshabilitado',
+				steps: [],
+				context: { ...initialContext }
+			};
+		}
 
-        const context = { ...initialContext };
-        const stepResults = [];
-        const startTime = Date.now();
+		// ⬇️ Mantener referencia al contexto original para mutaciones opcionales
+		const context = { ...initialContext };
+		const stepResults = [];
+		const startTime = Date.now();
 
-        for (let i = 0; i < workflow.steps.length; i++) {
-            const step = workflow.steps[i];
-            const actionFn = this.actions.get(step.action);
+		for (let i = 0; i < workflow.steps.length; i++) {
+			const step = workflow.steps[i];
+			const actionFn = this.actions.get(step.action);
 
-            try {
-                const result = await actionFn(context, step.params || {});
-                stepResults.push({
-                    index: i,
-                    action: step.action,
-                    success: true,
-                    result
-                });
-                // Actualizar contexto si la acción retorna algo
-                if (result && typeof result === 'object') {
-                    context._lastResult = result;
-                }
-            } catch (error) {
-                stepResults.push({
-                    index: i,
-                    action: step.action,
-                    success: false,
-                    error: error.message
-                });
+			try {
+				const result = await actionFn(context, step.params || {});
+				stepResults.push({
+					index: i,
+					action: step.action,
+					success: true,
+					result
+				});
+				if (result && typeof result === 'object') {
+					context._lastResult = result;
+				}
+			} catch (error) {
+				stepResults.push({
+					index: i,
+					action: step.action,
+					success: false,
+					error: error.message
+				});
 
-                if (!step.continueOnError) {
-                    break;
-                }
-            }
-        }
+				if (!step.continueOnError) {
+					break;
+				}
+			}
+		}
 
-        const report = {
-            workflow: workflowName,
-            trigger: workflow.trigger,
-            success: stepResults.every(r => r.success),
-            duration: Date.now() - startTime,
-            steps: stepResults,
-            context
-        };
+		const report = {
+			workflow: workflowName,
+			trigger: workflow.trigger,
+			success: stepResults.every(r => r.success),
+			duration: Date.now() - startTime,
+			steps: stepResults,
+			context  // ⬅️ El contexto mutado está aquí
+		};
 
-        // Añadir al log (con límite)
-        this.executionLog.push({
-            timestamp: new Date().toISOString(),
-            ...report
-        });
-        if (this.executionLog.length > this.maxLogSize) {
-            this.executionLog.shift();
-        }
+		// Copiar mutaciones al contexto original (opcional, para conveniencia)
+		Object.assign(initialContext, context);
 
-        return report;
-    }
+		// Añadir al log (con límite)
+		this.executionLog.push({
+			timestamp: new Date().toISOString(),
+			workflow: report.workflow,
+			trigger: report.trigger,
+			success: report.success,
+			duration: report.duration,
+			steps: report.steps
+		});
+		if (this.executionLog.length > this.maxLogSize) {
+			this.executionLog.shift();
+		}
+
+		return report;
+}
 
     /**
      * Dispara todos los workflows de un trigger específico.

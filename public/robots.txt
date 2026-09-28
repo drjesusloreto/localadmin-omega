@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /src/
+Disallow: /tests/
+Disallow: /node_modules/
+
+Sitemap: https://localadmin.io/sitemap.xml
