@@ -229,4 +229,164 @@ export class SyncEngine {
 		this.lastSyncReport = report;
 		return report;
 }
+	/**
+	 * Sincroniza cambios directamente con un peer vía WebRTC.
+	 * 
+	 * @param {string} peerId - ID del peer remoto.
+	 * @param {Object} webrtcManager - Instancia de WebRTCManager conectada.
+	 * @param {Object} options
+	 * @param {number} options.timeout - Timeout en ms para esperar respuesta (default: 5000).
+	 * @returns {Promise<Object>} - Reporte de sincronización P2P.
+	 */
+	async syncViaP2P(peerId, webrtcManager, options = {}) {
+		const timeout = options.timeout ?? 5000;
+		const report = {
+			method: 'p2p',
+			peerId,
+			uploaded: 0,
+			downloaded: 0,
+			applied: 0,
+			conflicts: 0,
+			errors: [],
+			success: false
+		};
+
+		// 1. Verificar que el WebRTCManager esté conectado
+		if (!webrtcManager || webrtcManager.getState() !== 'connected') {
+			report.errors.push({ phase: 'precheck', error: 'WebRTCManager no conectado' });
+			return report;
+		}
+
+		// 2. Configurar handler para mensajes entrantes del peer
+		const incomingChanges = [];
+		let resolveIncoming = null;
+		const incomingPromise = new Promise((resolve) => {
+			resolveIncoming = resolve;
+		});
+
+		const originalOnData = webrtcManager.onData;
+		webrtcManager.onData = (data, fromPeer) => {
+			if (fromPeer !== peerId) return;
+
+			if (data && data.type === 'changes') {
+				incomingChanges.push(...(data.changes || []));
+			}
+			if (data && data.type === 'sync-complete') {
+				resolveIncoming();
+			}
+
+			// Llamar al handler original si existe
+			if (typeof originalOnData === 'function') {
+				originalOnData(data, fromPeer);
+			}
+		};
+
+		// 3. Obtener cambios locales y enviarlos
+		let localChanges = [];
+		try {
+			localChanges = await this.db.getUnsyncedChanges();
+		} catch (e) {
+			report.errors.push({ phase: 'getChanges', error: e.message });
+			return report;
+		}
+
+		const sent = webrtcManager.sendData({
+			type: 'changes',
+			from: 'self',
+			changes: localChanges
+		});
+
+		if (!sent) {
+			report.errors.push({ phase: 'send', error: 'No se pudo enviar cambios' });
+			return report;
+		}
+
+		// 4. Esperar respuesta del peer (con timeout)
+		try {
+			await Promise.race([
+				incomingPromise,
+				new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout P2P')), timeout))
+			]);
+		} catch (e) {
+			report.errors.push({ phase: 'wait-response', error: e.message });
+			// Continuar con lo que se recibió hasta ahora
+		}
+
+		// 5. Marcar cambios locales como sincronizados
+		for (const change of localChanges) {
+			try {
+				await this.db.markChangeSynced(change.change_id);
+				report.uploaded++;
+			} catch (e) {
+				report.errors.push({ changeId: change.change_id, error: e.message });
+			}
+		}
+
+		// 6. Aplicar cambios remotos
+		report.downloaded = incomingChanges.length;
+		for (const remoteChange of incomingChanges) {
+			try {
+				const remoteRecord = remoteChange.data;
+				if (!remoteRecord || !remoteRecord.id) continue;
+
+				const localRecord = await this.db.getRecord(remoteRecord.id);
+
+				if (!localRecord) {
+					// Crear nuevo
+					await this._applyRemoteRecord(remoteRecord);
+					report.applied++;
+					continue;
+				}
+
+				// Resolver conflicto
+				const resolution = this.conflictResolver.resolve(localRecord, remoteRecord);
+				if (resolution.resolution === 'equal') continue;
+
+				if (resolution.resolution !== 'local-wins' && resolution.resolution !== 'local-lww') {
+					await this._applyRemoteRecord(resolution.winner);
+					report.applied++;
+					if (resolution.conflicts && resolution.conflicts.length > 0) {
+						report.conflicts++;
+					}
+				}
+			} catch (e) {
+				report.errors.push({ changeId: remoteChange.change_id, error: e.message });
+			}
+		}
+
+		// Restaurar onData original
+		webrtcManager.onData = originalOnData;
+
+		report.success = report.errors.length === 0;
+		this.lastSyncReport = report;
+		return report;
+	}
+
+	/**
+	 * Sincroniza con fallback automático: intenta P2P primero, luego GAS.
+	 * 
+	 * @param {Object} options
+	 * @param {string} options.peerId - Peer para P2P.
+	 * @param {Object} options.webrtcManager - WebRTCManager para P2P.
+	 * @returns {Promise<Object>} - Reporte de sincronización.
+	 */
+	async syncWithFallback(options = {}) {
+		// 1. Intentar P2P
+		if (options.peerId && options.webrtcManager) {
+			try {
+				const p2pReport = await this.syncViaP2P(options.peerId, options.webrtcManager);
+				if (p2pReport.success) {
+					return p2pReport;
+				}
+				console.warn('P2P falló, usando GAS como fallback:', p2pReport.errors);
+			} catch (e) {
+				console.warn('P2P lanzó error, usando GAS como fallback:', e);
+			}
+		}
+
+		// 2. Fallback a GAS
+		const gasReport = await this.sync();
+		gasReport.method = 'gas-fallback';
+		return gasReport;
+	}
 }
