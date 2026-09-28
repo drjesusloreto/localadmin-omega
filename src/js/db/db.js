@@ -312,20 +312,20 @@ export class Database {
   }
 
   /**
-   * Descifra el contenido de un registro.
-   * @param {Object} record 
-   * @returns {Promise<string>}
-   */
-  async decryptRecordContent(record) {
-    if (!this.encryptionKey || !record.content) return record.content;
-    
-    try {
-      return await CryptoUtils.decryptString(record.content, this.encryptionKey);
-    } catch (e) {
-      console.error('Error descifrando registro:', e);
-      return '[Error al descifrar]';
-    }
-  }
+	 * Descifra el contenido de un registro.
+	 * @param {Object} record
+	 * @returns {Promise<string>}
+	 */
+	async decryptRecordContent(record) {
+		if (!this.encryptionKey || !record.content) return record.content || '';
+		
+		try {
+			return await CryptoUtils.decryptString(record.content, this.encryptionKey);
+		} catch (e) {
+			console.error('Error descifrando registro:', e);
+			return '[Error al descifrar]';
+		}
+	}
 
   // ==========================================================================
   // CRUD: UPDATE

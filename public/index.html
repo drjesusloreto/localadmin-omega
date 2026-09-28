@@ -4,9 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocalAdmin Omega</title>
+    <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-    <div id="app">Cargando...</div>
+    <header>
+        <h1>🔐 LocalAdmin Omega</h1>
+        <div class="user-info">
+            <label for="user-select">Usuario:</label>
+            <select id="user-select">
+                <option value="admin">Admin</option>
+                <option value="editor">Editor</option>
+                <option value="viewer" selected>Viewer</option>
+            </select>
+        </div>
+    </header>
+
+    <main>
+        <section class="toolbar">
+            <input type="search" id="search-input" placeholder="Buscar registros...">
+            <button id="btn-new" disabled>➕ Nuevo Registro</button>
+            <button id="btn-sync">🔄 Sincronizar</button>
+        </section>
+
+        <section id="records-list" class="records-list">
+            <!-- Los registros se renderizan aquí -->
+        </section>
+
+        <section id="empty-state" class="empty-state">
+            <p>No hay registros. Crea uno nuevo para empezar.</p>
+        </section>
+    </main>
+
+    <dialog id="record-modal" class="modal">
+        <form id="record-form" method="dialog">
+            <h2 id="modal-title">Nuevo Registro</h2>
+            <label>
+                Nombre:
+                <input type="text" id="record-name" required>
+            </label>
+            <label>
+                Contenido:
+                <textarea id="record-content" rows="5"></textarea>
+            </label>
+            <label>
+                Categoría:
+                <input type="text" id="record-category" value="general">
+            </label>
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel">Cancelar</button>
+                <button type="submit" id="btn-save">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
     <script type="module" src="/src/js/ui/main.js"></script>
 </body>
 </html>
