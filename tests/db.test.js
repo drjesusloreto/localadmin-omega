@@ -9,19 +9,26 @@ describe('Database', () => {
   const TEST_PASSWORD = 'test-password-2024';
 
   beforeEach(async () => {
-    // 1. Limpiar IndexedDB antes de cada test
-    const dbs = await indexedDB.databases();
-    for (const info of dbs) {
-      indexedDB.deleteDatabase(info.name);
-    }
+	  // Cerrar conexión previa si existe
+	  if (db?.db) {
+		db.close();
+	  }
 
-    // 2. Crear instancia nueva
-    db = new Database();
-    await db.init();
-
-    // 3. Configurar clave de cifrado
-    await db.setEncryptionKey(TEST_PASSWORD);
+	  // Crear nueva instancia
+	  db = new Database();
+	  await db.init();
+	  
+	  // ORDEN CRÍTICO:
+	  // 1. Limpiar primero (elimina contaminación de tests anteriores)
+	  await db.clearAll();
+	  
+	  // 2. Configurar después (genera el salt que el test espera)
+	  await db.setEncryptionKey(TEST_PASSWORD);
   });
+
+afterEach(() => {
+  if (db?.db) db.close();
+});
 
   afterEach(() => {
     if (db?.db) db.close();
@@ -554,14 +561,22 @@ describe('Database', () => {
     });
 
     it('debe manejar error de descifrado con contenido corrupto', async () => {
-      const record = {
-        name: 'Test',
-        content: 'no-es-base64-valido-###'
-      };
+	  // Silenciar logs de error durante este test
+	  const originalError = console.error;
+	  console.error = () => {};
 
-      const decrypted = await db.decryptRecordContent(record);
-      expect(decrypted).toBe('[Error al descifrar]');
-    });
+	  const record = {
+		name: 'Test',
+		content: 'no-es-base64-valido-###'
+	  };
+
+	  const decrypted = await db.decryptRecordContent(record);
+	  
+	  // Restaurar
+	  console.error = originalError;
+	  
+	  expect(decrypted).toBe('[Error al descifrar]');
+	});
   });
 
   // ============ CLEAR ALL ============
