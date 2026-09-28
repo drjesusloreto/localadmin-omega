@@ -217,6 +217,26 @@ describe('SyncEngine - downloadRemoteChanges', () => {
         expect(report.applied).toBe(2);
         expect(mockDb._tx).not.toHaveBeenCalled();
     });
+	it('debe manejar cambio remoto sin data', async () => {
+		mockGasClient.getChangesSince.mockResolvedValue({
+			changes: [{ change_id: 1, data: null }]
+		});
+
+		const report = await syncEngine.downloadRemoteChanges();
+
+		expect(report.errors.length).toBe(1);
+		expect(report.errors[0].error).toContain('sin id');
+	});
+
+	it('debe manejar cambio remoto sin id', async () => {
+		mockGasClient.getChangesSince.mockResolvedValue({
+			changes: [{ change_id: 1, data: { name: 'Sin ID' } }]
+		});
+
+		const report = await syncEngine.downloadRemoteChanges();
+
+		expect(report.errors.length).toBe(1);
+	});
 });
 describe('SyncEngine - sync bidireccional', () => {
     let syncEngine;
