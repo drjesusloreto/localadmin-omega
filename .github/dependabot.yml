@@ -1,0 +1,35 @@
+# .github/dependabot.yml
+version: 2
+updates:
+  # Dependencias npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Caracas"
+    open-pull-requests-limit: 5
+    versioning-strategy: "increase"
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+      prod-dependencies:
+        dependency-type: "production"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "ci"
+      - "automated"
+    commit-message:
+      prefix: "chore(ci)"
