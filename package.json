@@ -1,24 +1,32 @@
 {
  "name": "localadmin-omega",
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-	"check": "node --check src/js/core/crypto-utils.js && node --check src/js/core/vector-clock.js && node --check src/js/core/audit/merkle-tree.js && node --check src/js/core/audit/blockchain-audit.js && node --check src/js/db/db.js && node --check src/js/db/semantic-db.js && node --check src/js/compression.js && node --check src/js/vectordb/hnsw-wasm.js && node --check src/js/intelligence/classifier.js && node --check src/js/intelligence/anomaly-detector.js && node --check src/js/intelligence/diff-engine.js && node --check src/js/intelligence/markdown-parser.js && node --check src/js/intelligence/tag-suggester.js && node --check src/js/ml/model-manager.js && node --check src/js/sync/gas-client.js && node --check src/js/sync/conflict-resolver.js && node --check src/js/sync/sync-engine.js && node --check src/js/p2p/webrtc-manager.js && node --check src/js/p2p/signal-server.js && node --check src/js/tenant/rbac.js && node --check src/js/tenant/policy-engine.js && node --check src/js/ui/main.js && node --check src/js/workflows/workflow-engine.js && node --check src/js/workflows/triggers.js && echo ✅ Todas las sintaxis OK"
-  },
-  "keywords": [],
-  "author": "Jesus Loreto",
-  "license": "ISC",
-  "devDependencies": {
-    "@vitest/coverage-v8": "^5.0.2",
-    "fake-indexeddb": "^6.2.5",
-    "happy-dom": "^20.14.5",
-    "vite": "^8.3.1",
-    "vitest": "^5.0.2"
-  }
+ "version": "0.1.0",
+ "type": "module",
+ "scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "test": "vitest run",
+  "test:watch": "vitest",
+  "test:coverage": "vitest run --coverage",
+  "test:e2e": "playwright test",
+  "test:e2e:headed": "playwright test --headed",
+  "test:e2e:ui": "playwright test --ui",
+  "check": "node --check src/js/core/crypto-utils.js && node --check src/js/core/vector-clock.js && node --check src/js/core/audit/merkle-tree.js && node --check src/js/core/audit/blockchain-audit.js && node --check src/js/db/db.js && node --check src/js/db/semantic-db.js && node --check src/js/compression.js && node --check src/js/vectordb/hnsw-wasm.js && node --check src/js/intelligence/classifier.js && node --check src/js/intelligence/anomaly-detector.js && node --check src/js/intelligence/diff-engine.js && node --check src/js/intelligence/markdown-parser.js && node --check src/js/intelligence/tag-suggester.js && node --check src/js/ml/model-manager.js && node --check src/js/sync/gas-client.js && node --check src/js/sync/conflict-resolver.js && node --check src/js/sync/sync-engine.js && node --check src/js/p2p/webrtc-manager.js && node --check src/js/p2p/signal-server.js && node --check src/js/tenant/rbac.js && node --check src/js/tenant/policy-engine.js && node --check src/js/ui/main.js && node --check src/js/workflows/workflow-engine.js && node --check src/js/workflows/triggers.js && echo ✅ Todas las sintaxis OK",
+  "analyze": "vite build && node scripts/analyze-bundle.js",
+  "analyze:visual": "vite-bundle-visualizer",
+  "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\""
+ },
+ "keywords": [],
+ "author": "Jesus Loreto",
+ "license": "ISC",
+ "devDependencies": {
+  "@vitest/coverage-v8": "^5.0.2",
+  "esbuild": "^0.28.2",
+  "fake-indexeddb": "^6.2.5",
+  "happy-dom": "^20.14.5",
+  "vite": "^8.3.1",
+  "vite-bundle-visualizer": "^1.2.1",
+  "vitest": "^5.0.2"
+ }
 }
