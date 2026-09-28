@@ -17,7 +17,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/js/**/*.js'],
-      exclude: ['src/js/ui/**', 'tests/**']
+      exclude: ['src/js/ui/**', 'tests/**','**/index.js']
     },
     
     // Archivos de prueba a incluir
