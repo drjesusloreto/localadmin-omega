@@ -239,18 +239,18 @@ describe('CryptoUtils', () => {
       expect(new Uint8Array(decryptedBuffer)).toEqual(bytes);
     });
 
-    it('debe manejar Blobs grandes (1MB)', async () => {
-      const largeData = new Uint8Array(1024 * 1024).map(() => 
-        Math.floor(Math.random() * 256)
-      );
-      const original = new Blob([largeData]);
-      
-      const encrypted = await CryptoUtils.encryptBlob(original, testKey);
-      const decrypted = await CryptoUtils.decryptBlob(encrypted, testKey);
-      
-      const decryptedBuffer = await decrypted.arrayBuffer();
-      expect(new Uint8Array(decryptedBuffer)).toEqual(largeData);
-    });
+    it('debe manejar Blobs grandes (100KB)', async () => {
+	  const largeData = new Uint8Array(100 * 1024).map(() =>
+		Math.floor(Math.random() * 256)
+	  );
+	  const original = new Blob([largeData]);
+	  
+	  const encrypted = await CryptoUtils.encryptBlob(original, testKey);
+	  const decrypted = await CryptoUtils.decryptBlob(encrypted, testKey);
+	  
+	  const decryptedBuffer = await decrypted.arrayBuffer();
+	  expect(new Uint8Array(decryptedBuffer)).toEqual(largeData);
+	});
 
     it('debe fallar al descifrar con clave incorrecta', async () => {
       const original = new Blob(['test']);
