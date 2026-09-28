@@ -36,5 +36,111 @@ beforeEach(() => {
     globalThis.localStorage.clear();
   }
 });
+// ============================================================
+// Mock de WebRTC para tests (happy-dom no lo implementa)
+// ============================================================
+if (typeof globalThis.RTCPeerConnection === 'undefined') {
+    class MockRTCDataChannel extends EventTarget {
+        constructor(label) {
+            super();
+            this.label = label;
+            this.readyState = 'connecting';
+            this._messages = [];
+        }
+        send(data) {
+            this._messages.push(data);
+            // Simular recepción en el otro lado
+            const event = new MessageEvent('message', { data });
+            this.dispatchEvent(event);
+        }
+        close() {
+            this.readyState = 'closed';
+            this.dispatchEvent(new Event('close'));
+        }
+        open() {
+            this.readyState = 'open';
+            this.dispatchEvent(new Event('open'));
+        }
+    }
 
+    class MockRTCPeerConnection extends EventTarget {
+        constructor(config = {}) {
+            super();
+            this.config = config;
+            this.localDescription = null;
+            this.remoteDescription = null;
+            this.iceConnectionState = 'new';
+            this.connectionState = 'new';
+            this._dataChannels = [];
+            this._iceCandidates = [];
+        }
+
+        createDataChannel(label, options = {}) {
+            const channel = new MockRTCDataChannel(label);
+            channel.open();
+            this._dataChannels.push(channel);
+            return channel;
+        }
+
+        async createOffer() {
+            return {
+                type: 'offer',
+                sdp: 'mock-sdp-offer-' + Math.random().toString(36).slice(2)
+            };
+        }
+
+        async createAnswer() {
+            return {
+                type: 'answer',
+                sdp: 'mock-sdp-answer-' + Math.random().toString(36).slice(2)
+            };
+        }
+
+        async setLocalDescription(desc) {
+            this.localDescription = desc;
+            // Simular generación de ICE candidates
+            setTimeout(() => {
+                const candidate = {
+                    candidate: 'candidate:mock-' + Math.random().toString(36).slice(2),
+                    sdpMid: '0',
+                    sdpMLineIndex: 0
+                };
+                this._iceCandidates.push(candidate);
+                this.dispatchEvent(new Event('icecandidate'));
+            }, 0);
+        }
+
+        async setRemoteDescription(desc) {
+            this.remoteDescription = desc;
+            this.iceConnectionState = 'connected';
+            this.connectionState = 'connected';
+        }
+
+        async addIceCandidate(candidate) {
+            this._iceCandidates.push(candidate);
+        }
+
+        close() {
+            this.connectionState = 'closed';
+            this.iceConnectionState = 'closed';
+            this.dispatchEvent(new Event('connectionstatechange'));
+        }
+    }
+
+    globalThis.RTCPeerConnection = MockRTCPeerConnection;
+    globalThis.RTCSessionDescription = class {
+        constructor(init) {
+            Object.assign(this, init);
+        }
+    };
+    globalThis.RTCIceCandidate = class {
+        constructor(init) {
+            Object.assign(this, init);
+        }
+    };
+
+    console.log('✅ Mock de WebRTC configurado');
+}
+
+console.log('Test setup completado (con fake-indexeddb)');
 console.log('✅ Test setup completado (con fake-indexeddb)');
