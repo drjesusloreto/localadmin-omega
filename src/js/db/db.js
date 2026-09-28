@@ -661,6 +661,23 @@ export class Database {
 			request.onerror = () => reject(request.error);
 		});
 	}
+	/**
+	 * Obtiene el ID del último cambio sincronizado.
+	 * @returns {Promise<number>}
+	 */
+	async getLastChangeId() {
+		const value = await this.getMeta('last_change_id');
+		return value ?? 0;
+	}
+
+	/**
+	 * Establece el ID del último cambio sincronizado.
+	 * @param {number} changeId
+	 * @returns {Promise<any>}
+	 */
+	async setLastChangeId(changeId) {
+		return this.setMeta('last_change_id', changeId);
+	}
 }
 
 // ============================================================================
