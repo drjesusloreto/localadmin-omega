@@ -133,4 +133,20 @@ describe('NaiveBayesClassifier', () => {
 		const tags = classifier.suggestTags('factura', 100);
 		expect(tags.length).toBeLessThanOrEqual(100);
 	});
+	it('no debe entrenar registros con categoría "general"', () => {
+		const initialSize = classifier.classes.size;
+		classifier.trainAll([
+			{ name: 'Test', content: 'contenido', category: 'general' },
+			{ name: 'Real', content: 'contenido', category: 'real' }
+		]);
+		expect(classifier.classes.size).toBe(initialSize + 1); // Solo 'real'
+		expect(classifier.classes.has('general')).toBe(false);
+	});
+
+	it('no debe entrenar registros sin categoría', () => {
+		classifier.trainAll([
+			{ name: 'Sin categoría', content: 'contenido' }
+		]);
+		expect(classifier.classes.size).toBe(0);
+	});
 });
