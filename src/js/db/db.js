@@ -641,6 +641,26 @@ export class Database {
       this.db = null;
     }
   }
+  async markChangeSynced(changeId) {
+		return new Promise((resolve, reject) => {
+			const tx = this.db.transaction('change_log', 'readwrite');
+			const store = tx.objectStore('change_log');
+			const request = store.get(changeId);
+			
+			request.onsuccess = () => {
+				const change = request.result;
+				if (change) {
+					change.synced = 1;
+					const updateRequest = store.put(change);
+					updateRequest.onsuccess = () => resolve(true);
+					updateRequest.onerror = () => reject(updateRequest.error);
+				} else {
+					resolve(false);
+				}
+			};
+			request.onerror = () => reject(request.error);
+		});
+	}
 }
 
 // ============================================================================
