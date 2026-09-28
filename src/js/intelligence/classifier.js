@@ -109,17 +109,27 @@ export class NaiveBayesClassifier {
      * @returns {Array<Array>} - Lista de [palabra, score].
      */
     getTopWords(category, topN = 10) {
-        const cls = this.classes.get(category);
-        if (!cls) return [];
-        const scores = [];
-        for (const [word, count] of cls.wordCounts) {
-            const tf = count / cls.totalWords;
-            const docsWithWord = Array.from(this.classes.values()).filter(c => c.wordCounts.has(word)).length;
-            const idf = Math.log(this.classes.size / (1 + docsWithWord));
-            scores.push([word, tf * idf]);
-        }
-        return scores.sort((a, b) => b[1] - a[1]).slice(0, topN);
-    }
+		const cls = this.classes.get(category);
+		if (!cls) return [];
+		
+		const scores = [];
+		const N = Math.max(this.classes.size, 2); // Mínimo 2 para evitar log(0)
+		
+		for (const [word, count] of cls.wordCounts) {
+			// TF: frecuencia de la palabra en esta categoría
+			const tf = count / cls.totalWords;
+			
+			// IDF con suavizado: evita que sea 0 cuando la palabra aparece en casi todas las categorías
+			// Fórmula: log((N + 1) / (df + 1)) + 1 (smoothing de Robertson)
+			const docsWithWord = Array.from(this.classes.values())
+				.filter(c => c.wordCounts.has(word)).length;
+			const idf = Math.log((N + 1) / (docsWithWord + 1)) + 1;
+			
+			scores.push([word, tf * idf]);
+		}
+		
+		return scores.sort((a, b) => b[1] - a[1]).slice(0, topN);
+	}
 
     /**
      * Exporta el modelo a JSON.

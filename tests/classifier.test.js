@@ -60,4 +60,77 @@ describe('NaiveBayesClassifier', () => {
         const result = classifier.predict('texto desconocido');
         expect(result.category).toBe('finanzas'); // Aunque no coincida, da la única categoría.
     });
+	// tests/classifier.test.js (añadir al final del describe)
+
+	it('debe obtener las palabras más importantes de una categoría', () => {
+		classifier.train('factura cliente importante pago pendiente', 'finanzas');
+		classifier.train('presupuesto proyecto web desarrollo', 'proyectos');
+		classifier.train('factura cliente recurrente mensual', 'finanzas');
+		
+		const topWords = classifier.getTopWords('finanzas', 5);
+		expect(topWords.length).toBeGreaterThan(0);
+		expect(topWords[0][0]).toBe('factura'); // "factura" aparece 2 veces
+		expect(topWords[0][1]).toBeGreaterThan(0); // Score > 0
+	});
+
+	it('debe retornar vacío para categoría inexistente en getTopWords', () => {
+		const topWords = classifier.getTopWords('categoria_inexistente');
+		expect(topWords).toEqual([]);
+	});
+
+	it('debe sugerir etiquetas limitando a topN', () => {
+		classifier.train('factura cliente importante pago', 'finanzas');
+		classifier.train('presupuesto proyecto web desarrollo', 'proyectos');
+		
+		const tags = classifier.suggestTags('factura cliente presupuesto proyecto', 2);
+		expect(tags.length).toBe(2);
+	});
+
+	it('debe sugerir etiquetas con texto sin coincidencias', () => {
+		classifier.train('factura cliente', 'finanzas');
+		const tags = classifier.suggestTags('texto completamente diferente', 5);
+		expect(tags.length).toBe(0);
+	});
+
+	it('debe manejar train con texto vacío', () => {
+		const totalBefore = classifier.totalDocs;
+		classifier.train('', 'finanzas');
+		expect(classifier.totalDocs).toBe(totalBefore); // No se añade
+	});
+
+	it('debe manejar train con categoría vacía', () => {
+		const totalBefore = classifier.totalDocs;
+		classifier.train('factura cliente', '');
+		expect(classifier.totalDocs).toBe(totalBefore); // No se añade
+	});
+
+	it('debe predecir con múltiples alternativas', () => {
+		classifier.train('factura cliente pago', 'finanzas');
+		classifier.train('presupuesto proyecto desarrollo', 'proyectos');
+		classifier.train('contrato laboral empleado', 'legal');
+		
+		const result = classifier.predict('factura cliente');
+		expect(result.category).toBe('finanzas');
+		expect(result.alternatives.length).toBeGreaterThan(0);
+		expect(result.alternatives.length).toBeLessThanOrEqual(3);
+	});
+	it('debe manejar getTopWords con una sola categoría', () => {
+    classifier.train('factura cliente importante', 'finanzas');
+    const topWords = classifier.getTopWords('finanzas', 3);
+    expect(topWords.length).toBeGreaterThan(0);
+    expect(topWords[0][1]).toBeGreaterThan(0); // El score NUNCA es 0 con smoothing
+	});
+
+	it('debe manejar import con modelo vacío', () => {
+		const newClassifier = new NaiveBayesClassifier();
+		newClassifier.import({ version: 1, totalDocs: 0, vocabulary: [], classes: {} });
+		expect(newClassifier.totalDocs).toBe(0);
+		expect(newClassifier.classes.size).toBe(0);
+	});
+
+	it('debe manejar suggestTags con topN mayor que tokens disponibles', () => {
+		classifier.train('factura cliente', 'finanzas');
+		const tags = classifier.suggestTags('factura', 100);
+		expect(tags.length).toBeLessThanOrEqual(100);
+	});
 });
