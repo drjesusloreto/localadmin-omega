@@ -1,18 +1,22 @@
 // tests/setup.js
+// tests/setup.js
 
-// 1. Polyfill de crypto para Node.js (para pruebas)
+// 1. Polyfill de fake-indexeddb (DEBE IR PRIMERO)
+import 'fake-indexeddb/auto';
+
+// 2. Polyfill de crypto para Node.js (para pruebas)
 import { webcrypto } from 'node:crypto';
 if (!globalThis.crypto) {
   globalThis.crypto = webcrypto;
 }
 
-// 2. Polyfill de Blob si no existe
+// 3. Polyfill de Blob si no existe
 if (typeof Blob === 'undefined') {
   const { Blob } = await import('node:buffer');
   globalThis.Blob = Blob;
 }
 
-// 3. Mock de navigator.storage (si no existe en el entorno)
+// 4. Mock de navigator.storage (si no existe en el entorno)
 if (!globalThis.navigator) {
   globalThis.navigator = {};
 }
@@ -25,8 +29,7 @@ if (!globalThis.navigator.storage) {
   };
 }
 
-// 4. happy-dom YA define localStorage, solo lo limpiamos entre tests
-// (no lo sobrescribimos, ¡eso causaba el error!)
+// 5. Limpiar localStorage entre tests
 import { beforeEach } from 'vitest';
 beforeEach(() => {
   if (globalThis.localStorage) {
@@ -34,4 +37,4 @@ beforeEach(() => {
   }
 });
 
-console.log('✅ Test setup completado');
+console.log('✅ Test setup completado (con fake-indexeddb)');

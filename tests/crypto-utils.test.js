@@ -149,4 +149,119 @@ describe('CryptoUtils', () => {
       expect(restored).toEqual(original);
     });
   });
+    // ============ CIFRADO DE BYTES ============
+  describe('encrypt / decrypt (bytes)', () => {
+    it('debe cifrar y descifrar un Uint8Array', async () => {
+      const original = new Uint8Array([1, 2, 3, 4, 5, 255, 128, 0]);
+      const encrypted = await CryptoUtils.encrypt(original, testKey);
+      
+      expect(encrypted).toBeInstanceOf(Uint8Array);
+      expect(encrypted).not.toEqual(original);
+      
+      const decrypted = await CryptoUtils.decrypt(encrypted, testKey);
+      expect(decrypted).toEqual(original);
+    });
+
+    it('debe fallar al descifrar con clave incorrecta', async () => {
+      const data = new Uint8Array([1, 2, 3]);
+      const encrypted = await CryptoUtils.encrypt(data, testKey);
+      
+      const wrongSalt = CryptoUtils.generateSalt();
+      const wrongKey = await CryptoUtils.deriveKey('wrong', wrongSalt);
+      
+      await expect(
+        CryptoUtils.decrypt(encrypted, wrongKey)
+      ).rejects.toThrow();
+    });
+
+    it('debe manejar datos binarios vacíos', async () => {
+      const empty = new Uint8Array(0);
+      const encrypted = await CryptoUtils.encrypt(empty, testKey);
+      const decrypted = await CryptoUtils.decrypt(encrypted, testKey);
+      
+      expect(decrypted.length).toBe(0);
+    });
+  });
+
+  // ============ HASH DE BLOBS ============
+  describe('hashBlob', () => {
+    it('debe calcular el hash de un Blob', async () => {
+      const blob = new Blob(['contenido de prueba'], { type: 'text/plain' });
+      const hash = await CryptoUtils.hashBlob(blob);
+      
+      expect(hash).toHaveLength(64);
+      expect(typeof hash).toBe('string');
+    });
+
+    it('debe producir el mismo hash para el mismo contenido', async () => {
+      const blob1 = new Blob(['test']);
+      const blob2 = new Blob(['test']);
+      
+      const hash1 = await CryptoUtils.hashBlob(blob1);
+      const hash2 = await CryptoUtils.hashBlob(blob2);
+      
+      expect(hash1).toBe(hash2);
+    });
+
+    it('debe producir hashes diferentes para contenidos diferentes', async () => {
+      const blob1 = new Blob(['a']);
+      const blob2 = new Blob(['b']);
+      
+      const hash1 = await CryptoUtils.hashBlob(blob1);
+      const hash2 = await CryptoUtils.hashBlob(blob2);
+      
+      expect(hash1).not.toBe(hash2);
+    });
+  });
+
+  // ============ CIFRADO DE BLOBS ============
+  describe('encryptBlob / decryptBlob', () => {
+    it('debe cifrar y descifrar un Blob', async () => {
+      const original = new Blob(['contenido secreto'], { type: 'text/plain' });
+      const encrypted = await CryptoUtils.encryptBlob(original, testKey);
+      
+      expect(encrypted).toBeInstanceOf(Blob);
+      expect(encrypted.size).toBeGreaterThan(0);
+      
+      const decrypted = await CryptoUtils.decryptBlob(encrypted, testKey, 'text/plain');
+      const text = await decrypted.text();
+      
+      expect(text).toBe('contenido secreto');
+    });
+
+    it('debe preservar el contenido binario exacto', async () => {
+      const bytes = new Uint8Array([0, 1, 2, 3, 254, 255]);
+      const original = new Blob([bytes]);
+      const encrypted = await CryptoUtils.encryptBlob(original, testKey);
+      const decrypted = await CryptoUtils.decryptBlob(encrypted, testKey);
+      
+      const decryptedBuffer = await decrypted.arrayBuffer();
+      expect(new Uint8Array(decryptedBuffer)).toEqual(bytes);
+    });
+
+    it('debe manejar Blobs grandes (1MB)', async () => {
+      const largeData = new Uint8Array(1024 * 1024).map(() => 
+        Math.floor(Math.random() * 256)
+      );
+      const original = new Blob([largeData]);
+      
+      const encrypted = await CryptoUtils.encryptBlob(original, testKey);
+      const decrypted = await CryptoUtils.decryptBlob(encrypted, testKey);
+      
+      const decryptedBuffer = await decrypted.arrayBuffer();
+      expect(new Uint8Array(decryptedBuffer)).toEqual(largeData);
+    });
+
+    it('debe fallar al descifrar con clave incorrecta', async () => {
+      const original = new Blob(['test']);
+      const encrypted = await CryptoUtils.encryptBlob(original, testKey);
+      
+      const wrongSalt = CryptoUtils.generateSalt();
+      const wrongKey = await CryptoUtils.deriveKey('wrong', wrongSalt);
+      
+      await expect(
+        CryptoUtils.decryptBlob(encrypted, wrongKey)
+      ).rejects.toThrow();
+    });
+  });
 });

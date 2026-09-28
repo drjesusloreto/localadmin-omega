@@ -161,4 +161,98 @@ export class CryptoUtils {
     }
     return bytes.buffer;
   }
+    // ==========================================================================
+  // CIFRADO DE BYTES (para Blobs y archivos)
+  // ==========================================================================
+
+  /**
+   * Cifra un Uint8Array usando AES-256-GCM.
+   * Formato: [IV (12 bytes) | Ciphertext + AuthTag]
+   * @param {Uint8Array} data - Datos binarios a cifrar
+   * @param {CryptoKey} key - Clave AES-GCM
+   * @returns {Promise<Uint8Array>} - Datos cifrados
+   */
+  static async encrypt(data, key) {
+    const iv = this.generateIV();
+    
+    // Asegurar que es Uint8Array
+    const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+    
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      bytes
+    );
+    
+    // Concatenar IV + Ciphertext
+    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(ciphertext), iv.length);
+    
+    return combined;
+  }
+
+  /**
+   * Descifra un Uint8Array cifrado con AES-256-GCM.
+   * @param {Uint8Array} encryptedData - Datos cifrados (IV + Ciphertext)
+   * @param {CryptoKey} key - Clave AES-GCM
+   * @returns {Promise<Uint8Array>} - Datos descifrados
+   */
+  static async decrypt(encryptedData, key) {
+    const combined = encryptedData instanceof Uint8Array
+      ? encryptedData
+      : new Uint8Array(encryptedData);
+    
+    // Extraer IV y ciphertext
+    const iv = combined.slice(0, IV_LENGTH);
+    const ciphertext = combined.slice(IV_LENGTH);
+    
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext
+    );
+    
+    return new Uint8Array(plaintext);
+  }
+
+  // ==========================================================================
+  // CIFRADO DE BLOBS (para archivos adjuntos)
+  // ==========================================================================
+
+  /**
+   * Calcula el hash SHA-256 de un Blob.
+   * @param {Blob} blob 
+   * @returns {Promise<string>} - Hash en hexadecimal
+   */
+  static async hashBlob(blob) {
+    const arrayBuffer = await blob.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    return this.arrayBufferToHex(hashBuffer);
+  }
+
+  /**
+   * Cifra un Blob usando AES-256-GCM.
+   * @param {Blob} blob 
+   * @param {CryptoKey} key 
+   * @returns {Promise<Blob>} - Blob cifrado
+   */
+  static async encryptBlob(blob, key) {
+    const arrayBuffer = await blob.arrayBuffer();
+    const encrypted = await this.encrypt(new Uint8Array(arrayBuffer), key);
+    return new Blob([encrypted], { type: 'application/octet-stream' });
+  }
+
+  /**
+   * Descifra un Blob cifrado con AES-256-GCM.
+   * @param {Blob} encryptedBlob 
+   * @param {CryptoKey} key 
+   * @param {string} originalMime - MIME type original del archivo
+   * @returns {Promise<Blob>} - Blob descifrado
+   */
+  static async decryptBlob(encryptedBlob, key, originalMime = 'application/octet-stream') {
+    const arrayBuffer = await encryptedBlob.arrayBuffer();
+    const decrypted = await this.decrypt(new Uint8Array(arrayBuffer), key);
+    return new Blob([decrypted], { type: originalMime });
+  }
 }
