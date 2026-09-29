@@ -24,7 +24,9 @@ describe('GasClient', () => {
 
     it('debe fallar si no hay webAppUrl en llamada remota', async () => {
         const clientWithoutUrl = new GasClient({ useNative: false, maxRetries: 1, retryDelay: 10 });
-        await expect(clientWithoutUrl.call('testMethod')).rejects.toThrow('webAppUrl no configurada');
+        await expect(clientWithoutUrl.call('testMethod')).rejects.toThrow(
+            'webAppUrl no configurada'
+        );
     });
 
     it('debe lanzar ConfigError para errores de configuración', async () => {
@@ -127,137 +129,145 @@ describe('GasClient', () => {
         const elapsed = Date.now() - start;
         expect(elapsed).toBeLessThan(500);
     });
-	describe('GasClient - Cobertura adicional', () => {
-    let client;
+    describe('GasClient - Cobertura adicional', () => {
+        let client;
 
-    beforeEach(() => {
-        localStorage.clear();
-        localStorage.setItem('device_id', 'test_device');
-    });
+        beforeEach(() => {
+            localStorage.clear();
+            localStorage.setItem('device_id', 'test_device');
+        });
 
-    it('debe usar _callNative con éxito cuando google.script.run responde', async () => {
-        global.google = {
-            script: {
-                run: {
-                    withSuccessHandler: vi.fn().mockImplementation(function(cb) {
-                        this._success = cb;
-                        return this;
-                    }),
-                    withFailureHandler: vi.fn().mockImplementation(function(cb) {
-                        this._failure = cb;
-                        return this;
-                    }),
-                    testMethod: vi.fn().mockImplementation(function() {
-                        // Simular respuesta exitosa asíncrona
-                        setTimeout(() => this._success({ success: true, data: 'native_ok' }), 0);
-                    })
+        it('debe usar _callNative con éxito cuando google.script.run responde', async () => {
+            global.google = {
+                script: {
+                    run: {
+                        withSuccessHandler: vi.fn().mockImplementation(function (cb) {
+                            this._success = cb;
+                            return this;
+                        }),
+                        withFailureHandler: vi.fn().mockImplementation(function (cb) {
+                            this._failure = cb;
+                            return this;
+                        }),
+                        testMethod: vi.fn().mockImplementation(function () {
+                            // Simular respuesta exitosa asíncrona
+                            setTimeout(
+                                () => this._success({ success: true, data: 'native_ok' }),
+                                0
+                            );
+                        })
+                    }
                 }
-            }
-        };
+            };
 
-        const nativeClient = new GasClient({ useNative: true, timeout: 500 });
-        const result = await nativeClient.call('testMethod');
-        
-        expect(result).toEqual({ success: true, data: 'native_ok' });
-        delete global.google;
-    });
+            const nativeClient = new GasClient({ useNative: true, timeout: 500 });
+            const result = await nativeClient.call('testMethod');
 
-    it('debe manejar _callNative con success: false', async () => {
-        global.google = {
-            script: {
-                run: {
-                    withSuccessHandler: vi.fn().mockImplementation(function(cb) {
-                        this._success = cb;
-                        return this;
-                    }),
-                    withFailureHandler: vi.fn().mockImplementation(function(cb) {
-                        this._failure = cb;
-                        return this;
-                    }),
-                    testMethod: vi.fn().mockImplementation(function() {
-                        setTimeout(() => this._success({ success: false, error: 'Error nativo' }), 0);
-                    })
+            expect(result).toEqual({ success: true, data: 'native_ok' });
+            delete global.google;
+        });
+
+        it('debe manejar _callNative con success: false', async () => {
+            global.google = {
+                script: {
+                    run: {
+                        withSuccessHandler: vi.fn().mockImplementation(function (cb) {
+                            this._success = cb;
+                            return this;
+                        }),
+                        withFailureHandler: vi.fn().mockImplementation(function (cb) {
+                            this._failure = cb;
+                            return this;
+                        }),
+                        testMethod: vi.fn().mockImplementation(function () {
+                            setTimeout(
+                                () => this._success({ success: false, error: 'Error nativo' }),
+                                0
+                            );
+                        })
+                    }
                 }
-            }
-        };
+            };
 
-        const nativeClient = new GasClient({ useNative: true, maxRetries: 0, timeout: 500 });
-        
-        await expect(nativeClient.call('testMethod')).rejects.toThrow('Error nativo');
-        delete global.google;
-    });
+            const nativeClient = new GasClient({ useNative: true, maxRetries: 0, timeout: 500 });
 
-    it('debe manejar _callNative con failureHandler', async () => {
-		global.google = {
-			script: {
-				run: {
-					withSuccessHandler: vi.fn().mockReturnThis(),
-					withFailureHandler: vi.fn().mockImplementation(function(cb) {
-						this._failure = cb;
-						return this;
-					}),
-					testMethod: vi.fn().mockImplementation(function() {
-						setTimeout(() => this._failure({ message: 'Fallo nativo' }), 0);
-					})
-				}
-			}
-		};
-
-		const nativeClient = new GasClient({ useNative: true, maxRetries: 0, timeout: 500 });
-		
-		await expect(nativeClient.call('testMethod')).rejects.toThrow('Fallo nativo');
-		delete global.google;
-	}, 10000); 
-
-    it('debe manejar error desconocido en _callRemote', async () => {
-        global.fetch = vi.fn(async () => {
-            // Lanzar un error que no sea Error ni AbortError
-            throw { message: 'Error raro' };
+            await expect(nativeClient.call('testMethod')).rejects.toThrow('Error nativo');
+            delete global.google;
         });
 
-        const client = new GasClient({ 
-            webAppUrl: 'https://test.com', 
-            maxRetries: 0, 
-            retryDelay: 10 
+        it('debe manejar _callNative con failureHandler', async () => {
+            global.google = {
+                script: {
+                    run: {
+                        withSuccessHandler: vi.fn().mockReturnThis(),
+                        withFailureHandler: vi.fn().mockImplementation(function (cb) {
+                            this._failure = cb;
+                            return this;
+                        }),
+                        testMethod: vi.fn().mockImplementation(function () {
+                            setTimeout(() => this._failure({ message: 'Fallo nativo' }), 0);
+                        })
+                    }
+                }
+            };
+
+            const nativeClient = new GasClient({ useNative: true, maxRetries: 0, timeout: 500 });
+
+            await expect(nativeClient.call('testMethod')).rejects.toThrow('Fallo nativo');
+            delete global.google;
+        }, 10000);
+
+        it('debe manejar error desconocido en _callRemote', async () => {
+            global.fetch = vi.fn(async () => {
+                // Lanzar un error que no sea Error ni AbortError
+                throw new Error('Error raro');
+            });
+
+            const client = new GasClient({
+                webAppUrl: 'https://test.com',
+                maxRetries: 0,
+                retryDelay: 10
+            });
+
+            await expect(client.call('test')).rejects.toThrow('Error raro');
         });
 
-        await expect(client.call('test')).rejects.toThrow('Error raro');
-    });
+        it('debe manejar fetch que devuelve JSON inválido', async () => {
+            global.fetch = vi.fn(async () => ({
+                ok: true,
+                json: async () => {
+                    throw new Error('JSON inválido');
+                }
+            }));
 
-    it('debe manejar fetch que devuelve JSON inválido', async () => {
-        global.fetch = vi.fn(async () => ({
-            ok: true,
-            json: async () => { throw new Error('JSON inválido'); }
-        }));
+            const client = new GasClient({
+                webAppUrl: 'https://test.com',
+                maxRetries: 0,
+                retryDelay: 10
+            });
 
-        const client = new GasClient({ 
-            webAppUrl: 'https://test.com', 
-            maxRetries: 0, 
-            retryDelay: 10 
+            await expect(client.call('test')).rejects.toThrow('JSON inválido');
         });
 
-        await expect(client.call('test')).rejects.toThrow('JSON inválido');
-    });
+        it('debe acumular avgLatency correctamente en múltiples llamadas', async () => {
+            global.fetch = vi.fn(async () => ({
+                ok: true,
+                json: async () => ({ success: true })
+            }));
 
-    it('debe acumular avgLatency correctamente en múltiples llamadas', async () => {
-        global.fetch = vi.fn(async () => ({
-            ok: true,
-            json: async () => ({ success: true })
-        }));
+            const client = new GasClient({
+                webAppUrl: 'https://test.com',
+                maxRetries: 0,
+                retryDelay: 10
+            });
 
-        const client = new GasClient({ 
-            webAppUrl: 'https://test.com', 
-            maxRetries: 0, 
-            retryDelay: 10 
+            await client.call('test1');
+            await client.call('test2');
+            await client.call('test3');
+
+            const stats = client.getStats();
+            expect(stats.totalCalls).toBe(3);
+            expect(stats.avgLatency).toBeGreaterThanOrEqual(0);
         });
-
-        await client.call('test1');
-        await client.call('test2');
-        await client.call('test3');
-
-        const stats = client.getStats();
-        expect(stats.totalCalls).toBe(3);
-        expect(stats.avgLatency).toBeGreaterThanOrEqual(0);
     });
-	});
 });
