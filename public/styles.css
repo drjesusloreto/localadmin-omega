@@ -8,13 +8,14 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: #f5f5f5;
-    color: #333;
+    color: #1e293b;
     min-height: 100vh;
+    line-height: 1.5;
 }
 
 header {
     background: #1e293b;
-    color: white;
+    color: #ffffff;
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
@@ -23,6 +24,7 @@ header {
 
 header h1 {
     font-size: 1.5rem;
+    font-weight: 700;
 }
 
 .user-info {
@@ -31,10 +33,18 @@ header h1 {
     align-items: center;
 }
 
+.user-info label {
+    color: #ffffff;
+    font-weight: 500;
+}
+
 .user-info select {
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 1rem;
 }
 
 main {
@@ -52,23 +62,44 @@ main {
 .toolbar input {
     flex: 1;
     padding: 0.5rem 1rem;
-    border: 1px solid #cbd5e1;
+    border: 1px solid #94a3b8;
     border-radius: 4px;
     font-size: 1rem;
+    color: #1e293b;
+    background: #ffffff;
 }
 
+.toolbar input:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-color: #2563eb;
+}
+
+/* BOTONES: contraste WCAG AA (ratio 5.17:1) */
 button {
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 4px;
-    background: #3b82f6;
-    color: white;
+    background: #2563eb;
+    color: #ffffff;
     cursor: pointer;
     font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.15s ease;
+}
+
+button:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+button:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
 }
 
 button:disabled {
     background: #cbd5e1;
+    color: #475569;
     cursor: not-allowed;
 }
 
@@ -79,7 +110,7 @@ button:disabled {
 }
 
 .record-card {
-    background: white;
+    background: #ffffff;
     border-radius: 8px;
     padding: 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -90,6 +121,13 @@ button:disabled {
 
 .record-card h3 {
     font-size: 1rem;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.record-card p {
+    color: #475569;
+    font-size: 0.875rem;
 }
 
 .record-card .actions {
@@ -103,10 +141,16 @@ button:disabled {
     font-size: 0.75rem;
 }
 
+/* EMPTY STATE: contraste WCAG AA (ratio 7.65:1) */
 .empty-state {
     text-align: center;
     padding: 3rem;
-    color: #64748b;
+    color: #475569;
+    font-size: 1rem;
+}
+
+.empty-state p {
+    color: #475569;
 }
 
 .modal {
@@ -115,6 +159,8 @@ button:disabled {
     padding: 1.5rem;
     max-width: 500px;
     width: 90%;
+    background: #ffffff;
+    color: #1e293b;
 }
 
 .modal::backdrop {
@@ -127,25 +173,68 @@ button:disabled {
     gap: 1rem;
 }
 
+.modal h2 {
+    color: #1e293b;
+    font-size: 1.25rem;
+}
+
 .modal label {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
     font-size: 0.875rem;
     font-weight: 500;
+    color: #334155;
 }
 
 .modal input,
 .modal textarea {
     padding: 0.5rem;
-    border: 1px solid #cbd5e1;
+    border: 1px solid #94a3b8;
     border-radius: 4px;
     font-family: inherit;
     font-size: 1rem;
+    color: #1e293b;
+    background: #ffffff;
+}
+
+.modal input:focus,
+.modal textarea:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-color: #2563eb;
 }
 
 .modal-actions {
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
 }

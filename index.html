@@ -39,27 +39,44 @@
         </section>
     </main>
 
-    <dialog id="record-modal" class="modal">
-        <form id="record-form" method="dialog">
-            <h2 id="modal-title">Nuevo Registro</h2>
-            <label>
-                Nombre:
-                <input type="text" id="record-name" required>
-            </label>
-            <label>
-                Contenido:
-                <textarea id="record-content" rows="5"></textarea>
-            </label>
-            <label>
-                Categoría:
-                <input type="text" id="record-category" value="general">
-            </label>
-            <div class="modal-actions">
-                <button type="button" id="btn-cancel">Cancelar</button>
-                <button type="submit" id="btn-save">Guardar</button>
-            </div>
-        </form>
-    </dialog>
+    <dialog id="record-modal" class="modal" aria-labelledby="modal-title">
+		<form id="record-form" method="dialog">
+			<h2 id="modal-title">Nuevo Registro</h2>
+			<label for="record-name">
+				Nombre:
+				<input 
+					type="text" 
+					id="record-name" 
+					name="name" 
+					required
+					aria-label="Nombre del registro"
+				>
+			</label>
+			<label for="record-content">
+				Contenido:
+				<textarea 
+					id="record-content" 
+					name="content" 
+					rows="5"
+					aria-label="Contenido del registro"
+				></textarea>
+			</label>
+			<label for="record-category">
+				Categoría:
+				<input 
+					type="text" 
+					id="record-category" 
+					name="category" 
+					value="general"
+					aria-label="Categoría del registro"
+				>
+			</label>
+			<div class="modal-actions">
+				<button type="button" id="btn-cancel" aria-label="Cancelar y cerrar el modal">Cancelar</button>
+				<button type="submit" id="btn-save" aria-label="Guardar el registro">Guardar</button>
+			</div>
+		</form>
+</dialog>
 
     <script type="module" src="/src/js/ui/main.js"></script>
 	<script>

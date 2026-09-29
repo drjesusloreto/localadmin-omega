@@ -25,17 +25,20 @@
   "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\" \"scripts/**/*.js\"",
   "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\" \"scripts/**/*.js\"",
   "quality": "npm run lint && npm run format:check",
-  "quality:fix": "npm run lint:fix && npm run format","validate": "npm run check && npm run lint && npm run format:check && npm test"
- },"lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "prettier --write"
-    ]
-  },
+  "quality:fix": "npm run lint:fix && npm run format",
+  "validate": "npm run check && npm run lint && npm run format:check && npm test"
+ },
+ "lint-staged": {
+  "*.js": [
+   "eslint --fix",
+   "prettier --write"
+  ]
+ },
  "keywords": [],
  "author": "Jesus Loreto",
  "license": "ISC",
  "devDependencies": {
+  "@axe-core/playwright": "^4.13.0",
   "@eslint/js": "^10.0.1",
   "@playwright/test": "^1.63.0",
   "@vitest/coverage-v8": "^5.0.2",
