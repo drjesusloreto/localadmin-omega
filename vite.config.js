@@ -8,7 +8,8 @@ export default defineConfig({
 
     server: {
         port: 5173,
-        open: true,
+        open: true,host: 'localhost',  // ⬅️ Añadir host explícito
+    strictPort: true, 
         headers: {
             'X-Content-Type-Options': 'nosniff',
             'X-Frame-Options': 'DENY',

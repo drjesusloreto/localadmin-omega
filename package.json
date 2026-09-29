@@ -12,6 +12,9 @@
   "test:e2e": "playwright test",
   "test:e2e:headed": "playwright test --headed",
   "test:e2e:ui": "playwright test --ui",
+  "test:e2e:report": "playwright show-report",
+  "test:e2e:prod": "playwright test --config=playwright.production.config.js",
+  "test:e2e:all": "npm run test:e2e && npm run test:e2e:prod",
   "check": "node --check src/js/core/crypto-utils.js && node --check src/js/core/vector-clock.js && node --check src/js/core/audit/merkle-tree.js && node --check src/js/core/audit/blockchain-audit.js && node --check src/js/db/db.js && node --check src/js/db/semantic-db.js && node --check src/js/compression.js && node --check src/js/vectordb/hnsw-wasm.js && node --check src/js/intelligence/classifier.js && node --check src/js/intelligence/anomaly-detector.js && node --check src/js/intelligence/diff-engine.js && node --check src/js/intelligence/markdown-parser.js && node --check src/js/intelligence/tag-suggester.js && node --check src/js/ml/model-manager.js && node --check src/js/sync/gas-client.js && node --check src/js/sync/conflict-resolver.js && node --check src/js/sync/sync-engine.js && node --check src/js/p2p/webrtc-manager.js && node --check src/js/p2p/signal-server.js && node --check src/js/tenant/rbac.js && node --check src/js/tenant/policy-engine.js && node --check src/js/ui/main.js && node --check src/js/workflows/workflow-engine.js && node --check src/js/workflows/triggers.js && echo ✅ Todas las sintaxis OK",
   "analyze": "vite build && node scripts/analyze-bundle.js",
   "analyze:visual": "vite-bundle-visualizer",
@@ -21,6 +24,7 @@
  "author": "Jesus Loreto",
  "license": "ISC",
  "devDependencies": {
+  "@playwright/test": "^1.63.0",
   "@vitest/coverage-v8": "^5.0.2",
   "esbuild": "^0.28.2",
   "fake-indexeddb": "^6.2.5",

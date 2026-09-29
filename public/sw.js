@@ -3,11 +3,12 @@
  * Service Worker para LocalAdmin Omega.
  * 
  * Estrategia de caché:
- * - App shell: cache-first (HTML, CSS, JS).
+ * - App shell: cache-first (solo en producción).
  * - Datos de usuario: no se cachean (están en IndexedDB).
  * - Recursos externos: network-first con fallback a cache.
  * 
- * Referencia: EDC Página 280-295 + PAE Semana 6, Día 22
+ * IMPORTANTE: Este SW solo debe activarse en producción.
+ * En desarrollo, Vite maneja el HMR y no queremos interferir.
  */
 
 const CACHE_NAME = 'localadmin-omega-v1';
@@ -51,48 +52,77 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================================
-// FETCH: Estrategia de caché
+// FETCH: Estrategia de caché robusta
 // ============================================================
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // No cachear peticiones a otros orígenes (ej. GAS)
+    // ⬇️ NO interceptar peticiones fuera de nuestro origen
     if (url.origin !== self.location.origin) {
         return;
     }
 
-    // No cachear peticiones POST/PUT/DELETE
+    // ⬇️ NO interceptar métodos que no sean GET
     if (request.method !== 'GET') {
         return;
     }
 
-    // App shell: cache-first
-    if (APP_SHELL.includes(url.pathname)) {
+    // ⬇️ NO interceptar recursos de Vite en desarrollo
+    // (Vite HMR usa WebSocket y endpoints propios)
+    if (url.pathname.startsWith('/@vite/') ||
+        url.pathname.startsWith('/@react-refresh') ||
+        url.pathname.startsWith('/node_modules/') ||
+        url.pathname.startsWith('/src/') ||
+        url.pathname.includes('?v=') ||
+        url.pathname.includes('?t=')) {
+        return;
+    }
+
+    // ⬇️ NO interceptar si es un navigation request (el navegador lo maneja)
+    if (request.mode === 'navigate') {
         event.respondWith(
-            caches.match(request).then((cached) => {
-                return cached || fetch(request);
+            fetch(request).catch(() => {
+                return caches.match('/index.html').then((cached) => {
+                    return cached || new Response('Offline', {
+                        status: 503,
+                        statusText: 'Service Unavailable',
+                        headers: { 'Content-Type': 'text/plain' }
+                    });
+                });
             })
         );
         return;
     }
 
-    // Otros recursos: network-first con fallback
+    // ⬇️ Estrategia cache-first con fallback robusto
     event.respondWith(
-        fetch(request)
-            .then((response) => {
-                // Cachear respuesta exitosa
-                if (response.ok) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(request, clone);
-                    });
+        caches.match(request).then((cached) => {
+            if (cached) {
+                return cached;
+            }
+            return fetch(request).then((response) => {
+                // Solo cachear respuestas exitosas
+                if (!response || response.status !== 200 || response.type === 'opaque') {
+                    return response;
                 }
+                // Clonar y cachear
+                const responseToCache = response.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(request, responseToCache);
+                });
                 return response;
-            })
-            .catch(() => {
-                return caches.match(request);
-            })
+            }).catch(() => {
+                // Fallback: si es un recurso crítico, servir el App Shell
+                return caches.match('/index.html').then((fallback) => {
+                    return fallback || new Response('Recurso no disponible offline', {
+                        status: 503,
+                        statusText: 'Service Unavailable',
+                        headers: { 'Content-Type': 'text/plain' }
+                    });
+                });
+            });
+        })
     );
 });
 

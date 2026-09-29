@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head><meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob:; worker-src * 'unsafe-inline' 'unsafe-eval' blob:; child-src * 'unsafe-inline' 'unsafe-eval' blob:; frame-src *; media-src * blob: data:; font-src * data:; img-src * data: blob:; connect-src *; form-action *; object-src *; manifest-src *;">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
 	<link rel="manifest" href="/manifest.json">
 	<meta name="theme-color" content="#3b82f6">
 	<meta name="description" content="Gestor de bases de datos y archivos local, offline-first, sin servidor.">
@@ -62,12 +63,21 @@
 
     <script type="module" src="/src/js/ui/main.js"></script>
 	<script>
-    // Registrar Service Worker
-    if ('serviceWorker' in navigator) {
+    // Registrar Service Worker SOLO en producción
+    if ('serviceWorker' in navigator && 
+        location.hostname !== 'localhost' && 
+        location.hostname !== '127.0.0.1') {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js')
-                .then((reg) => console.log('SW registrado:', reg.scope))
-                .catch((err) => console.warn('SW no registrado:', err));
+                .then((reg) => console.log('✅ SW registrado:', reg.scope))
+                .catch((err) => console.warn('⚠️ SW no registrado:', err));
+        });
+    } else if ('serviceWorker' in navigator) {
+        // En desarrollo: desregistrar SW antiguos que quedaron cacheados
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (const reg of registrations) {
+                reg.unregister().then(() => console.log('🧹 SW antiguo desregistrado'));
+            }
         });
     }
 </script>
